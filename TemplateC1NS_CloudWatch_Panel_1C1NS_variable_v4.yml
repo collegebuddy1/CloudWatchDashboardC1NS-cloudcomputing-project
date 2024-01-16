@@ -1,0 +1,231 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Creates Cloudwatch Dashboard for Cloud One Network Security
+Parameters:
+  DashboardName:
+    Description: Insert the Name for the CloudWatch Panel
+    Type: String
+    Default: Cloud_One_Network_Security_Panel
+  C1NSInstanceID:
+    Description: Insert the Instance ID of Network Security Instance
+    Type: String
+  C1NSAlarmID:
+    Description: Insert the ARN for the Network Security Instance Alarm
+    Type: String
+  C1NSRegion:
+    Description: Insert the Region where the Network Security Instance sits
+    Type: String
+    Default: us-east-1
+Resources:
+  BasicDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref DashboardName
+      DashboardBody:
+        Fn::Sub: '{
+              "widgets": [
+                 {
+                     "type": "alarm",
+                     "x":0,
+                     "y":0,
+                     "width": 12,
+                     "height": 3,
+                     "properties": {
+                         "alarms": [
+                           "${C1NSAlarmID}"
+                           ],
+                         "region": [
+                           "${C1NSRegion}"
+                           ],
+                         "period": 60,
+                         "title": "Cloud One Network Security - Status"
+                     }
+                  },
+                  {
+                     "type": "metric",
+                     "x":0,
+                     "y":4,
+                     "width": 24,
+                     "height": 3,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "metrics": [
+                            [ "AWS/EC2", "CPUUtilization", "InstanceId", "${C1NSInstanceID}" ],
+                            [ ".", "NetworkIn", ".", "." ],
+                            [ ".", "NetworkOut", ".", "." ],
+                            [ ".", "NetworkPacketsIn", ".", "." ],
+                            [ ".", "NetworkPacketsOut", ".", "." ],
+                            [ ".", "StatusCheckFailed_System", ".", "." ],
+                            [ ".", "StatusCheckFailed_Instance", ".", "." ]
+                         ],
+                         "view": "singleValue",
+                         "period": 60,
+                         "title": "Cloud One Network Security - Statistics",
+                         "stat": "Average"
+                     }
+                  },
+                  {
+                     "type": "metric",
+                     "x":0,
+                     "y":7,
+                     "width": 17,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "metrics": [
+                            [ "AWS/EC2", "NetworkIn", "InstanceId", "${C1NSInstanceID}" ],
+                            [ ".", "NetworkOut", ".", "." ]
+                         ],
+                         "view": "timeSeries",
+                         "period": 60,
+                         "title": "Data Transfered Bytes",
+                         "stat": "Average"
+                     }
+                  },
+                  {
+                     "type": "metric",
+                     "x":18,
+                     "y":7,
+                     "width": 5,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "metrics": [
+                            [ "AWS/EC2", "NetworkIn", "InstanceId", "${C1NSInstanceID}" ],
+                            [ ".", "NetworkOut", ".", "." ]
+                         ],
+                         "view": "singleValue",
+                         "period": 60,
+                         "title": "Bytes Consumed",
+                         "stat": "Sum",
+                         "setPeriodToTimeRange": true
+                     }
+                  },
+                  {
+                     "type": "metric",
+                     "x":0,
+                     "y":13,
+                     "width": 17,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "metrics": [
+                            [ "AWS/EC2", "NetworkPacketsIn", "InstanceId", "${C1NSInstanceID}" ],
+                            [ ".", "NetworkPacketsOut", ".", "." ]
+                         ],
+                         "view": "timeSeries",
+                         "period": 60,
+                         "title": "Packets Transfered",
+                         "stat": "Average"
+                     }
+                  },
+                  {
+                     "type": "metric",
+                     "x":18,
+                     "y":13,
+                     "width": 5,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "metrics": [
+                            [ "AWS/EC2", "NetworkPacketsIn", "InstanceId", "${C1NSInstanceID}" ],
+                            [ ".", "NetworkPacketsOut", ".", "." ]
+                         ],
+                         "view": "singleValue",
+                         "period": 60,
+                         "title": "Packets Transfered",
+                         "stat": "Sum",
+                         "setPeriodToTimeRange": true
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":19,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "bar",
+                         "period": 60,
+                         "title": "Cloud One Network Security - BLOCK Action",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Block\" \n| filter @message not like \"IP Reputation\" \n| stats count() by bin(30s) "
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":25,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "table",
+                         "period": 60,
+                         "title": "Cloud One Network Security - BLOCK Action",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Block\" \n| filter @message not like \"IP Reputation\" "
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":31,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "bar",
+                         "period": 60,
+                         "title": "Cloud One Network Security - PERMIT Action",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Permit\" \n| filter @message not like \"IP Reputation\" \n| stats count() by bin(30s) "
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":37,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "table",
+                         "period": 60,
+                         "title": "Cloud One Network Security - PERMIT Action",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Permit\" \n| filter @message not like \"IP Reputation\" "
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":43,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "bar",
+                         "period": 60,
+                         "title": "Cloud One Network Security - Geo BLOCK",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Block\" \n| filter @message like \"IP Reputation\" \n| stats count() by bin(30s) "
+                     }
+                  },
+                  {
+                     "type": "log",
+                     "x":0,
+                     "y":49,
+                     "width": 24,
+                     "height": 6,
+                     "properties": {
+                         "region":"${C1NSRegion}",
+                         "view": "table",
+                         "period": 60,
+                         "title": "Cloud One Network Security - Geo BLOCK",
+                         "stat": "Sum",
+                         "query": "SOURCE \u0027network_security_logs\u0027 | fields @timestamp, @message \n| sort @timestamp desc \n| limit 20 \n| filter @message like \"Block\" \n| filter @message like \"IP Reputation\" "
+                     }
+                  }
+              ]
+          }'
